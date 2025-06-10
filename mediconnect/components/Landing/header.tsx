@@ -55,10 +55,11 @@ export default function Header() {
           title: "Health Articles",
           href: "/soon",
         },
-        {
-          title: "FAQs",
-          href: "/soon",
-        },
+        
+           {
+        title: "FAQs", 
+        href: "/faq",  
+      },
         {
           title: "Patient Education",
           href: "/soon",

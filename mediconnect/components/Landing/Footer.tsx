@@ -13,6 +13,7 @@ import {
   FaFirstAid,
   FaUser,
   FaCalendarAlt,
+  FaGithub,
 } from "react-icons/fa";
 import Link from "next/link";
 
@@ -46,28 +47,26 @@ export default function Footer() {
 
             <div className="flex items-center gap-4">
               <a
-                href="#"
+                href="https://github.com/ali-sorathiya64"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-rose-500 transition-colors duration-200"
               >
-                <FaFacebookF className="w-5 h-5" />
+                <FaGithub className="w-5 h-5" />
               </a>
               <a
-                href="#"
-                className="text-muted-foreground hover:text-rose-500 transition-colors duration-200"
-              >
-                <FaTwitter className="w-5 h-5" />
-              </a>
-              <a
-                href="#"
+                href="https://instagram.com/ali_sorathiya"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-rose-500 transition-colors duration-200"
               >
                 <FaInstagram className="w-5 h-5" />
               </a>
               <a
-                href="#"
+                href="mailto:aasorathiya33@gmail.com"
                 className="text-muted-foreground hover:text-rose-500 transition-colors duration-200"
               >
-                <FaLinkedinIn className="w-5 h-5" />
+                <FaEnvelope className="w-5 h-5" />
               </a>
             </div>
           </div>
@@ -79,51 +78,17 @@ export default function Footer() {
               <h3 className="text-lg font-semibold">Medical Services</h3>
             </div>
             <ul className="grid grid-cols-1 gap-3">
-              <li>
-                <Link
-                  href="/soon"
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-rose-500 transition-colors duration-200"
-                >
-                  <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
-                  Emergency Care
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/soon"
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-rose-500 transition-colors duration-200"
-                >
-                  <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
-                  Primary Care
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/soon"
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-rose-500 transition-colors duration-200"
-                >
-                  <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
-                  Specialist Consultations
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/soon"
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-rose-500 transition-colors duration-200"
-                >
-                  <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
-                  Laboratory Services
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/soon"
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-rose-500 transition-colors duration-200"
-                >
-                  <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
-                  Radiology & Imaging
-                </Link>
-              </li>
+              {["Emergency Care", "Primary Care", "Specialist Consultations", "Laboratory Services", "Radiology & Imaging"].map((service) => (
+                <li key={service}>
+                  <Link
+                    href="/soon"
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-rose-500 transition-colors duration-200"
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
+                    {service}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -134,51 +99,23 @@ export default function Footer() {
               <h3 className="text-lg font-semibold">Patient Resources</h3>
             </div>
             <ul className="grid grid-cols-1 gap-3">
-              <li>
-                <Link
-                  href="/auth"
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-rose-500 transition-colors duration-200"
-                >
-                  <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
-                  Patient Portal
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/soon"
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-rose-500 transition-colors duration-200"
-                >
-                  <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
-                  Find a Doctor
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/soon"
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-rose-500 transition-colors duration-200"
-                >
-                  <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
-                  Medical Records
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/soon"
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-rose-500 transition-colors duration-200"
-                >
-                  <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
-                  Insurance Information
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/soon"
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-rose-500 transition-colors duration-200"
-                >
-                  <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
-                  Patient Education
-                </Link>
-              </li>
+              {[
+                { title: "Patient Portal", href: "/auth" },
+                { title: "Find a Doctor", href: "/soon" },
+                { title: "Medical Records", href: "/soon" },
+                { title: "Insurance Information", href: "/soon" },
+                { title: "Patient Education", href: "/soon" },
+              ].map((resource) => (
+                <li key={resource.title}>
+                  <Link
+                    href={resource.href}
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-rose-500 transition-colors duration-200"
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
+                    {resource.title}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -192,11 +129,9 @@ export default function Footer() {
               <li className="flex gap-3 text-sm text-muted-foreground">
                 <FaMapMarkerAlt className="w-5 h-5 text-rose-500 shrink-0" />
                 <span>
-                  123 Healthcare Avenue
+                  Veraval, Gujarat
                   <br />
-                  Medical District
-                  <br />
-                  MD 12345
+                  India
                 </span>
               </li>
               <li className="flex items-center gap-3 text-sm text-muted-foreground">
@@ -211,10 +146,10 @@ export default function Footer() {
               <li className="flex items-center gap-3 text-sm text-muted-foreground">
                 <FaEnvelope className="w-5 h-5 text-rose-500" />
                 <a
-                  href="mailto:care@mediconnect.com"
+                  href="mailto:aasorathiya33@gmail.com"
                   className="hover:text-rose-500 transition-colors duration-200"
                 >
-                  care@mediconnect.com
+                  aasorathiya33@gmail.com
                 </a>
               </li>
               <li className="flex items-center gap-3 text-sm text-muted-foreground">
@@ -258,6 +193,7 @@ export default function Footer() {
           </div>
         </div>
       </div>
+
       {/* Emergency Banner */}
       <div className="w-full bg-rose-500 py-2">
         <div className="container mx-auto px-4">
@@ -277,5 +213,3 @@ export default function Footer() {
     </footer>
   );
 }
-
-

@@ -14,35 +14,53 @@ interface OSMHospital {
     "addr:city"?: string;
     "addr:postcode"?: string;
     healthcare?: string;
+    [key: string]: string | undefined; // Index signature for additional tags
   };
+}
+
+interface FormattedHospital {
+  id: string;
+  name: string;
+  distance: number;
+  address: string;
+  coordinates: Coordinates;
 }
 
 // Convert pincode to coordinates using Nominatim
 export async function getPincodeCoordinates(
   pincode: string
 ): Promise<Coordinates> {
-  const response = await fetch(
-    `https://nominatim.openstreetmap.org/search?postalcode=${pincode}&country=india&format=json`,
-    {
-      headers: {
-        "User-Agent": "MediConnect/1.0",
-      },
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?postalcode=${encodeURIComponent(pincode)}&country=india&format=json`,
+      {
+        headers: {
+          "User-Agent": "MediConnect/1.0 (contact@example.com)",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to geocode pincode: ${response.status}`);
     }
-  );
 
-  if (!response.ok) {
-    throw new Error("Failed to geocode pincode");
+    const data = await response.json();
+    if (!data || !data.length) {
+      throw new Error("Pincode not found");
+    }
+
+    const lat = parseFloat(data[0].lat);
+    const lon = parseFloat(data[0].lon);
+
+    if (isNaN(lat) || isNaN(lon)) {
+      throw new Error("Invalid coordinates received");
+    }
+
+    return { lat, lon };
+  } catch (error) {
+    console.error("Error in getPincodeCoordinates:", error);
+    throw error;
   }
-
-  const data = await response.json();
-  if (!data.length) {
-    throw new Error("Pincode not found");
-  }
-
-  return {
-    lat: parseFloat(data[0].lat),
-    lon: parseFloat(data[0].lon),
-  };
 }
 
 // Get hospitals near coordinates using Overpass API
@@ -50,32 +68,48 @@ export async function getHospitalsNearby(
   coords: Coordinates,
   radius: number = 5000
 ): Promise<OSMHospital[]> {
-  const query = `
-    [out:json][timeout:25];
-    (
-      node["amenity"="hospital"](around:${radius},${coords.lat},${coords.lon});
-      way["amenity"="hospital"](around:${radius},${coords.lat},${coords.lon});
-      relation["amenity"="hospital"](around:${radius},${coords.lat},${coords.lon});
-      node["healthcare"="hospital"](around:${radius},${coords.lat},${coords.lon});
-      way["healthcare"="hospital"](around:${radius},${coords.lat},${coords.lon});
-      relation["healthcare"="hospital"](around:${radius},${coords.lat},${coords.lon});
-    );
-    out body;
-    >;
-    out skel qt;
-  `;
+  try {
+    const query = `
+      [out:json][timeout:25];
+      (
+        node["amenity"="hospital"](around:${radius},${coords.lat},${coords.lon});
+        way["amenity"="hospital"](around:${radius},${coords.lat},${coords.lon});
+        relation["amenity"="hospital"](around:${radius},${coords.lat},${coords.lon});
+        node["healthcare"="hospital"](around:${radius},${coords.lat},${coords.lon});
+        way["healthcare"="hospital"](around:${radius},${coords.lat},${coords.lon});
+        relation["healthcare"="hospital"](around:${radius},${coords.lat},${coords.lon});
+      );
+      out body;
+      >;
+      out skel qt;
+    `;
 
-  const response = await fetch("https://overpass-api.de/api/interpreter", {
-    method: "POST",
-    body: query,
-  });
+    const response = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      body: query,
+    });
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch hospitals");
+    if (!response.ok) {
+      throw new Error(`Failed to fetch hospitals: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.elements || !Array.isArray(data.elements)) {
+      throw new Error("Invalid data format received from Overpass API");
+    }
+
+    return data.elements.filter((el: any) => {
+      // Filter elements that have coordinates and at least a name or healthcare tag
+      return (
+        (el.lat && el.lon) &&
+        (el.tags?.name || el.tags?.healthcare)
+      );
+    }) as OSMHospital[];
+  } catch (error) {
+    console.error("Error in getHospitalsNearby:", error);
+    throw error;
   }
-
-  const data = await response.json();
-  return data.elements.filter((el: any) => el.tags?.name) as OSMHospital[];
 }
 
 // Calculate distance between two coordinates in kilometers
@@ -103,29 +137,82 @@ export function formatHospitalData(
   osmHospital: OSMHospital,
   userLat: number,
   userLon: number
-) {
-  const distance = calculateDistance(
-    userLat,
-    userLon,
-    osmHospital.lat,
-    osmHospital.lon
-  );
-  const address = [
-    osmHospital.tags["addr:street"],
-    osmHospital.tags["addr:city"],
-    osmHospital.tags["addr:postcode"],
-  ]
-    .filter(Boolean)
-    .join(", ");
+): FormattedHospital {
+  try {
+    // Calculate distance
+    const distance = calculateDistance(
+      userLat,
+      userLon,
+      osmHospital.lat,
+      osmHospital.lon
+    );
+    
+    // Build address parts
+    const addressParts = [];
+    if (osmHospital.tags?.["addr:street"]) {
+      addressParts.push(osmHospital.tags["addr:street"]);
+    }
+    if (osmHospital.tags?.["addr:city"]) {
+      addressParts.push(osmHospital.tags["addr:city"]);
+    }
+    if (osmHospital.tags?.["addr:postcode"]) {
+      addressParts.push(osmHospital.tags["addr:postcode"]);
+    }
+    
+    // Fallback to other address-related tags if standard ones are missing
+    if (addressParts.length === 0) {
+      if (osmHospital.tags?.["addr:housename"]) {
+        addressParts.push(osmHospital.tags["addr:housename"]);
+      }
+      if (osmHospital.tags?.["addr:housenumber"]) {
+        addressParts.push(osmHospital.tags["addr:housenumber"]);
+      }
+    }
+    
+    // Get the best available name
+    const name = osmHospital.tags?.name || 
+                osmHospital.tags?.["operator"] || 
+                "Unnamed Hospital";
 
-  return {
-    id: osmHospital.id.toString(),
-    name: osmHospital.tags.name || "Unnamed Hospital",
-    distance: parseFloat(distance.toFixed(1)),
-    address: address || "Address not available",
-    coordinates: {
-      lat: osmHospital.lat,
-      lon: osmHospital.lon,
-    },
-  };
+    return {
+      id: osmHospital.id?.toString() || `${osmHospital.lat}-${osmHospital.lon}`,
+      name: name,
+      distance: parseFloat(distance.toFixed(1)),
+      address: addressParts.length > 0 ? addressParts.join(", ") : "Address not available",
+      coordinates: {
+        lat: osmHospital.lat,
+        lon: osmHospital.lon,
+      },
+    };
+  } catch (error) {
+    console.error("Error formatting hospital data:", error, osmHospital);
+    return {
+      id: "error",
+      name: "Error loading hospital",
+      distance: 0,
+      address: "Address not available",
+      coordinates: {
+        lat: 0,
+        lon: 0,
+      },
+    };
+  }
+}
+
+// Main function to get formatted hospitals near a pincode
+export async function getNearbyHospitals(
+  pincode: string,
+  radius: number = 5000
+): Promise<FormattedHospital[]> {
+  try {
+    const coords = await getPincodeCoordinates(pincode);
+    const hospitals = await getHospitalsNearby(coords, radius);
+    
+    return hospitals
+      .map(hospital => formatHospitalData(hospital, coords.lat, coords.lon))
+      .sort((a, b) => a.distance - b.distance);
+  } catch (error) {
+    console.error("Error in getNearbyHospitals:", error);
+    throw error;
+  }
 }
